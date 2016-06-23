@@ -96,17 +96,17 @@ public class ShowTacticalOverview extends AbstractHandler
     // prepare our axes
     final DependentAxis bearingAxis = factory.createDependentAxis();
     bearingAxis.setAxisType(factory.createNumberAxis());
-    bearingAxis.setName("Bearing");
+    bearingAxis.setName("Bearing (\u00b0)");
     chart.getMinAxes().add(bearingAxis);
 
     final DependentAxis relBearingAxis = factory.createDependentAxis();
-    relBearingAxis.setName("Rel Bearing");
+    relBearingAxis.setName("Rel Bearing (\u00b0)");
     relBearingAxis.setAxisType(factory.createNumberAxis());
     chart.getMinAxes().add(relBearingAxis);
 
     // prepare our datasets
     final Dataset bearingData = factory.createDataset();
-    bearingData.setName(sec.getName() + " Bearing (\u00b0)");
+    bearingData.setName(sec.getName() + " Bearing");
     final PlainStyling bearingStyle = factory.createPlainStyling();
     bearingStyle.setColor(color.darker().darker());
     bearingStyle.setLineStyle(LineType.DOTTED);
@@ -116,7 +116,7 @@ public class ShowTacticalOverview extends AbstractHandler
     bearingAxis.getDatasets().add(bearingData);
 
     final Dataset relBearingData = factory.createDataset();
-    relBearingData.setName(sec.getName() + " Rel Bearing (\u00b0)");
+    relBearingData.setName(sec.getName() + " Rel Bearing");
     final PlainStyling relBearingStyle = factory.createPlainStyling();
     relBearingStyle.setColor(color);
     relBearingStyle.setLineThickness(THICKNESS);
@@ -126,7 +126,7 @@ public class ShowTacticalOverview extends AbstractHandler
     relBearingAxis.getDatasets().add(relBearingData);
 
     final Dataset atbData = factory.createDataset();
-    atbData.setName(sec.getName() + " ATB (\u00b0)");
+    atbData.setName(sec.getName() + " ATB");
     final PlainStyling relStyle = factory.createPlainStyling();
     relStyle.setColor(color.brighter().brighter());
     relStyle.setLineThickness(THICKNESS);
@@ -210,20 +210,20 @@ public class ShowTacticalOverview extends AbstractHandler
 
     // prepare our axes
     final DependentAxis courseAxis = factory.createDependentAxis();
-    courseAxis.setName("Course");
+    courseAxis.setName("Course (\u00b0)");
     chart.getMinAxes().add(courseAxis);
 
     final DependentAxis speedAxis = factory.createDependentAxis();
-    speedAxis.setName("Speed");
+    speedAxis.setName("Speed (kts)");
     chart.getMaxAxes().add(speedAxis);
 
     final DependentAxis depthAxis = factory.createDependentAxis();
-    depthAxis.setName("Depth");
+    depthAxis.setName("Depth (m)");
     boolean hasDepth = false;
 
     // prepare our datasets
     final Dataset courseData = factory.createDataset();
-    courseData.setName("Course (\u00b0)");
+    courseData.setName("Course");
     final PlainStyling courseStyle = factory.createPlainStyling();
     courseStyle.setColor(color.brighter());
     courseStyle.setIncludeInLegend(false);
@@ -232,7 +232,7 @@ public class ShowTacticalOverview extends AbstractHandler
     courseAxis.getDatasets().add(courseData);
 
     final Dataset speedData = factory.createDataset();
-    speedData.setName("Speed (kts)");
+    speedData.setName("Speed");
     final PlainStyling speedStyle = factory.createPlainStyling();
     speedStyle.setColor(color.darker());
     speedStyle.setMarkerStyle(MarkerStyle.NONE);
@@ -241,7 +241,7 @@ public class ShowTacticalOverview extends AbstractHandler
     speedAxis.getDatasets().add(speedData);
 
     final Dataset depthData = factory.createDataset();
-    depthData.setName("Depth (m)");
+    depthData.setName("Depth");
     final PlainStyling depthStyle = factory.createPlainStyling();
     depthStyle.setColor(color);
     depthStyle.setMarkerStyle(MarkerStyle.NONE);

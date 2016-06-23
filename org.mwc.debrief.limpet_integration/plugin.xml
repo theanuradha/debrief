@@ -13,9 +13,6 @@
             categoryId="org.mwc.debrief.limpet_integration.commands.category"
             id="org.mwc.debrief.limpet_integration.commands.showTacticalOverview">
       </command>
-   </extension>
-   <extension
-         point="org.eclipse.ui.commands">
       <command
             name="Export to WMF"
             categoryId="org.mwc.debrief.limpet_integration.commands.category"
@@ -45,15 +42,12 @@
                tooltip="Show tactical overview">
          </command>
       </menuContribution>
-   </extension>
-   <extension
-         point="org.eclipse.ui.menus">
       <menuContribution
             allPopups="false"
             locationURI="toolbar:info.limpet.StackedChartsView">
          <command
                commandId="org.mwc.debrief.limpet_integration.commands.exportToWMF"
-               icon="icons/x_section.png"
+               icon="icons/ex_2word.png"
                id="org.mwc.debrief.limpet_integration.toolbars.exportToWMF"
                tooltip="Export to WMF">
          </command>
