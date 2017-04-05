@@ -38,6 +38,7 @@ import org.eclipse.core.commands.operations.UndoContext;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtensionRegistry;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.ISafeRunnable;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
@@ -69,6 +70,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.progress.UIJob;
 import org.mwc.cmap.core.operations.IUndoable;
 import org.mwc.cmap.gridharness.data.base60.Sexagesimal;
 import org.mwc.cmap.gridharness.data.base60.SexagesimalFormat;
@@ -222,62 +224,81 @@ public class CorePlugin extends AbstractUIPlugin implements ClipboardOwner
   {
     super.start(context);
 
-    // we have an ongoing problem with the window that RCP provides for a floated XY
-    // Plot staying behind after the view itself has closed, and
-    // after the app has closed/re-opened.
-    PlatformUI.getWorkbench().addWorkbenchListener(workbenchListener);
-
-    // hack to initialise the TIFF importers. I believe we're having classpath
-    // issues,
-    // if we don't try to get an image reader right at the start of the app,
-    // we can't get a TIFF loader later on.
-    System.setProperty("com.sun.media.jai.disableMediaLib", "true");
-    final Iterator<ImageReader> iter2 = ImageIO.getImageReadersBySuffix("tif");
-    if (!iter2.hasNext())
+    UIJob load = new UIJob(Display.getDefault(),"init")
     {
-      logError(Status.ERROR,
-          "Failed to initialise TIFF reader for Java ImageIO", null);
-      System.err.println("TIFF READER NOT READY");
-    }
-    else
-    {
-      logError(Status.INFO, "Successfully loaded TIFF reader for Java ImageIO",
-          null);
-    }
+      
+      @Override
+      public IStatus runInUIThread(IProgressMonitor monitor)
+      {
+     // we have an ongoing problem with the window that RCP provides for a floated XY
+        // Plot staying behind after the view itself has closed, and
+        // after the app has closed/re-opened.
+        PlatformUI.getWorkbench().addWorkbenchListener(workbenchListener);
 
-    // create something capable of handling legacy preferences
-    _toolParent = new DebriefToolParent(getPreferenceStore(), getHistory());
+        // hack to initialise the TIFF importers. I believe we're having classpath
+        // issues,
+        // if we don't try to get an image reader right at the start of the app,
+        // we can't get a TIFF loader later on.
+        System.setProperty("com.sun.media.jai.disableMediaLib", "true");
+        final Iterator<ImageReader> iter2 = ImageIO.getImageReadersBySuffix("tif");
+        if (!iter2.hasNext())
+        {
+          logError(Status.ERROR,
+              "Failed to initialise TIFF reader for Java ImageIO", null);
+          System.err.println("TIFF READER NOT READY");
+        }
+        else
+        {
+          logError(Status.INFO, "Successfully loaded TIFF reader for Java ImageIO",
+              null);
+        }
 
-    // tell the VPF generator where to get its preferences from
-    CreateVPFLayers.initialise(_toolParent);
+        // create something capable of handling legacy preferences
+        _toolParent = new DebriefToolParent(getPreferenceStore(), getHistory());
 
-    // also initialise the ETOPO wrapper (if we have to)
-    CreateTOPO.initialise(_toolParent);
+        // tell the VPF generator where to get its preferences from
+        CreateVPFLayers.initialise(_toolParent);
 
-    // and the replay importer - since it needs to know what mode (ATG/DR)
-    // to use for new data
-    ImportReplay.initialise(_toolParent);
+        // also initialise the ETOPO wrapper (if we have to)
+        CreateTOPO.initialise(_toolParent);
 
-    // and the coastline-reader
-    CoastPainter.initialise(_toolParent);
+        // and the replay importer - since it needs to know what mode (ATG/DR)
+        // to use for new data
+        ImportReplay.initialise(_toolParent);
 
-    // and the application - so we can use our own toolparent for the properties
-    Application.initialise(_toolParent);
+        // and the coastline-reader
+        CoastPainter.initialise(_toolParent);
 
-    // and the range calculator (it needs to know for the user pref on units)
-    rangeCalc.init(_toolParent);
+        // and the application - so we can use our own toolparent for the properties
+        Application.initialise(_toolParent);
 
-    // and the old error logger
-    Trace.initialise(_toolParent);
+        // and the range calculator (it needs to know for the user pref on units)
+        rangeCalc.init(_toolParent);
 
-    // the VPF database may wish to announce some kind of warning
-    // if it can't find it's data
-    VPFDatabaseHandler.initialise(_toolParent);
+        // and the old error logger
+        Trace.initialise(_toolParent);
 
-    // there again, the track wrapper may have problems when it's
-    TrackSegment.initialise(_toolParent);
+        // the VPF database may wish to announce some kind of warning
+        // if it can't find it's data
+        VPFDatabaseHandler.initialise(_toolParent);
 
-    evaluateEarthModelProviderExtension(Platform.getExtensionRegistry());
+        // there again, the track wrapper may have problems when it's
+        TrackSegment.initialise(_toolParent);
+
+        try
+        {
+          evaluateEarthModelProviderExtension(Platform.getExtensionRegistry());
+        }
+        catch (CoreException e)
+        {
+          e.printStackTrace();
+        }
+        return Status.OK_STATUS;
+      }
+    };
+    load.schedule();
+    //load.runInUIThread(null);
+    
   }
 
   /**
