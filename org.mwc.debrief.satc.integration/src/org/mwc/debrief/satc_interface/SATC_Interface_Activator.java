@@ -26,6 +26,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.progress.UIJob;
 import org.eclipse.ui.progress.WorkbenchJob;
 import org.mwc.cmap.core.property_support.EditableWrapper;
 import org.mwc.cmap.core.ui_support.CoreViewLabelProvider;
@@ -116,13 +117,25 @@ public class SATC_Interface_Activator extends AbstractUIPlugin
 		super.start(context);
 		plugin = this;
 
-		WorkbenchJob job = new WorkbenchJob("Just a UI Job")
+		UIJob job = new UIJob("Just a UI Job")
 		{
 
 			@Override
 			public IStatus runInUIThread(IProgressMonitor monitor)
 			{
+				// register our doppler calculator
+				SATC_Activator.getDefault().setDopplerCalculator(new DopplerCalculator()
+				{
+					
+					@Override
+					public double calcPredictedFreq(double SpeedOfSound, double osHeadingRads,
+							double tgtHeadingRads, double osSpeed, double tgtSpeed, double bearing, double fNought)
+					{
+						return FrequencyCalcs.calcPredictedFreqSI(SpeedOfSound, osHeadingRads, tgtHeadingRads, osSpeed, tgtSpeed, bearing, fNought);
+					}
+				});
 				initPartMonitor();
+				
 				return Status.OK_STATUS;
 			}
 		};
@@ -131,17 +144,7 @@ public class SATC_Interface_Activator extends AbstractUIPlugin
 		// register our image helper
 		CoreViewLabelProvider.addImageHelper(new SATC_ImageHelper());
 
-		// register our doppler calculator
-		SATC_Activator.getDefault().setDopplerCalculator(new DopplerCalculator()
-		{
-			
-			@Override
-			public double calcPredictedFreq(double SpeedOfSound, double osHeadingRads,
-					double tgtHeadingRads, double osSpeed, double tgtSpeed, double bearing, double fNought)
-			{
-				return FrequencyCalcs.calcPredictedFreqSI(SpeedOfSound, osHeadingRads, tgtHeadingRads, osSpeed, tgtSpeed, bearing, fNought);
-			}
-		});
+		
 		
 	}
 

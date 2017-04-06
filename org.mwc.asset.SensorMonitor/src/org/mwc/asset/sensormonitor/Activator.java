@@ -14,9 +14,13 @@
  */
 package org.mwc.asset.sensormonitor;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.*;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.progress.UIJob;
 import org.mwc.asset.core.ASSETPlugin;
 import org.mwc.asset.sensormonitor.views.SensorMonitor;
 import org.mwc.cmap.core.CorePlugin;
@@ -24,6 +28,7 @@ import org.osgi.framework.BundleContext;
 
 import ASSET.Models.SensorType;
 import ASSET.Models.Sensor.CoreSensor;
+import ASSET.Participants.Status;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -51,19 +56,29 @@ public class Activator extends AbstractUIPlugin {
 		super.start(context);
 		
 		
-		// also provide the method to let sensors open their own monitor
-		CoreSensor.setWatchMethod(new CoreSensor.SensorOperation(){
-			public void run(final SensorType me)
-			{
-				// open a view, based on this sensor
-				// ok, open a new view
-				final IViewPart part = CorePlugin.openSecondaryView(ASSETPlugin.SENSOR_MONITOR, "" + System.currentTimeMillis(),
-						IWorkbenchPage.VIEW_VISIBLE);
-				
-				final SensorMonitor sm = (SensorMonitor) part;
-				sm.updateSensor(me);	
-				sm.setKeepMonitoring(false);
-			}});		
+		UIJob load = new UIJob(Display.getDefault(),"init") {
+			
+			@Override
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				// also provide the method to let sensors open their own monitor
+				CoreSensor.setWatchMethod(new CoreSensor.SensorOperation(){
+					public void run(final SensorType me)
+					{
+						// open a view, based on this sensor
+						// ok, open a new view
+						final IViewPart part = CorePlugin.openSecondaryView(ASSETPlugin.SENSOR_MONITOR, "" + System.currentTimeMillis(),
+								IWorkbenchPage.VIEW_VISIBLE);
+						
+						final SensorMonitor sm = (SensorMonitor) part;
+						sm.updateSensor(me);	
+						sm.setKeepMonitoring(false);
+					}});	
+				return org.eclipse.core.runtime.Status.OK_STATUS;
+			}
+		};
+		load.schedule();
+		
+			
 	}
 
 	/*

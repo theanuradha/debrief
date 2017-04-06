@@ -19,11 +19,15 @@ import java.util.List;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IAdapterFactory;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.progress.UIJob;
 import org.mwc.cmap.grideditor.chart.location.LocationChartAccess;
 import org.mwc.cmap.grideditor.interpolation.location.LocationInterpolatorFactory;
 import org.mwc.cmap.gridharness.data.GriddableItemDescriptorExtension;
@@ -55,13 +59,22 @@ public class GridEditorPlugin extends AbstractUIPlugin {
 		super.start(context);
 		ourInstance = this;
 		myPluginId = context.getBundle().getSymbolicName();
-		final IAdapterFactory locationChartAdapterFactory = new LocationChartAccess();
-		final IAdapterFactory locationInterpolatorAdapterFactory = new LocationInterpolatorFactory();
-		myAdapterFactories = new LinkedList<IAdapterFactory>();
-		myAdapterFactories.add(locationChartAdapterFactory);
-		myAdapterFactories.add(locationInterpolatorAdapterFactory);
-		Platform.getAdapterManager().registerAdapters(locationChartAdapterFactory, GriddableItemDescriptorExtension.class);
-		Platform.getAdapterManager().registerAdapters(locationInterpolatorAdapterFactory, GriddableItemDescriptorExtension.class);
+	UIJob load = new UIJob(Display.getDefault(),"init") {
+			
+			@Override
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				final IAdapterFactory locationChartAdapterFactory = new LocationChartAccess();
+				final IAdapterFactory locationInterpolatorAdapterFactory = new LocationInterpolatorFactory();
+				myAdapterFactories = new LinkedList<IAdapterFactory>();
+				myAdapterFactories.add(locationChartAdapterFactory);
+				myAdapterFactories.add(locationInterpolatorAdapterFactory);
+				Platform.getAdapterManager().registerAdapters(locationChartAdapterFactory, GriddableItemDescriptorExtension.class);
+				Platform.getAdapterManager().registerAdapters(locationInterpolatorAdapterFactory, GriddableItemDescriptorExtension.class);
+				return org.eclipse.core.runtime.Status.OK_STATUS;
+			}
+		};
+		load.schedule();
+		
 	}
 
 	@Override

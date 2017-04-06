@@ -22,11 +22,15 @@ import java.awt.image.WritableRaster;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.progress.UIJob;
 import org.mwc.cmap.core.ui_support.swt.SWTRasterPainter;
 import org.mwc.cmap.plotViewer.actions.ExportRTF;
 import org.mwc.cmap.plotViewer.actions.ExportWMF;
@@ -63,12 +67,22 @@ public class PlotViewerPlugin extends AbstractUIPlugin {
 	public void start(final BundleContext context) throws Exception {
 		super.start(context);
 		
-		// sort out export to WMF
-		ExportWMF.init(org.mwc.cmap.core.CorePlugin.getToolParent());
-		ExportRTF.init(org.mwc.cmap.core.CorePlugin.getToolParent());
+	UIJob load = new UIJob(Display.getDefault(),"init") {
+			
+			@Override
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				// sort out export to WMF
+				ExportWMF.init(org.mwc.cmap.core.CorePlugin.getToolParent());
+				ExportRTF.init(org.mwc.cmap.core.CorePlugin.getToolParent());
+				
+				// override the spatial raster painter - since we're working with SWT images, not JAva ones
+				SpatialRasterPainter.overridePainter(new SWTRasterPainter());
+				return org.eclipse.core.runtime.Status.OK_STATUS;
+			}
+		};
+		load.schedule();
 		
-		// override the spatial raster painter - since we're working with SWT images, not JAva ones
-		SpatialRasterPainter.overridePainter(new SWTRasterPainter());
+		
 	}
 
 	/**

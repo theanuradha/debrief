@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -35,6 +36,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.progress.UIJob;
 import org.mwc.cmap.core.CorePlugin;
 import org.mwc.cmap.core.property_support.RightClickSupport;
 import org.mwc.cmap.core.ui_support.CoreViewLabelProvider;
@@ -285,91 +287,100 @@ public class DebriefPlugin extends AbstractUIPlugin implements MessageProvider
   public void start(final BundleContext context) throws Exception
   {
     super.start(context);
+	UIJob load = new UIJob(Display.getDefault(),"init") {
+		
+		@Override
+		public IStatus runInUIThread(IProgressMonitor monitor) {
+			// also provide someps extra functionality to the right-click editor
+		    RightClickSupport.addRightClickGenerator(new GenerateTrack());
+		    RightClickSupport.addRightClickGenerator(new GroupTracks());
+		    RightClickSupport.addRightClickGenerator(new GenerateInfillSegment());
+		    RightClickSupport.addRightClickGenerator(new MergeTracks());
+		    RightClickSupport.addRightClickGenerator(new MergeContacts());
+		    RightClickSupport
+		        .addRightClickGenerator(new ConvertAbsoluteTmaToRelative());
+		    RightClickSupport.addRightClickGenerator(new ShowCutsForThisTMASegment());
+		    RightClickSupport.addRightClickGenerator(new SelectCutsForThisTMASegment());
+		    RightClickSupport.addRightClickGenerator(new GenerateTMASegmentFromCuts());
+		    RightClickSupport
+		        .addRightClickGenerator(new GenerateTMASegmentFromOwnshipPositions());
+		    RightClickSupport
+		        .addRightClickGenerator(new GenerateTMASegmentFromInfillSegment());
+		    RightClickSupport.addRightClickGenerator(new GenerateTUASolution());
+		    RightClickSupport.addRightClickGenerator(new GenerateTrackFromActiveCuts());
+		    RightClickSupport.addRightClickGenerator(new GenerateSensorRangePlot());
+		    RightClickSupport.addRightClickGenerator(new GenerateNewSensor());
+		    RightClickSupport.addRightClickGenerator(new GenerateNewSensorContact());
+		    RightClickSupport.addRightClickGenerator(new GenerateNewNarrativeEntry());
+		    RightClickSupport.addRightClickGenerator(new ImportAsTrack());
+		    RightClickSupport.addRightClickGenerator(new TrimTrack());
+		    RightClickSupport.addRightClickGenerator(new RainbowShadeSonarCuts());
+		    RightClickSupport.addRightClickGenerator(new InterpolateTrack());
 
-    // also provide someps extra functionality to the right-click editor
-    RightClickSupport.addRightClickGenerator(new GenerateTrack());
-    RightClickSupport.addRightClickGenerator(new GroupTracks());
-    RightClickSupport.addRightClickGenerator(new GenerateInfillSegment());
-    RightClickSupport.addRightClickGenerator(new MergeTracks());
-    RightClickSupport.addRightClickGenerator(new MergeContacts());
-    RightClickSupport
-        .addRightClickGenerator(new ConvertAbsoluteTmaToRelative());
-    RightClickSupport.addRightClickGenerator(new ShowCutsForThisTMASegment());
-    RightClickSupport.addRightClickGenerator(new SelectCutsForThisTMASegment());
-    RightClickSupport.addRightClickGenerator(new GenerateTMASegmentFromCuts());
-    RightClickSupport
-        .addRightClickGenerator(new GenerateTMASegmentFromOwnshipPositions());
-    RightClickSupport
-        .addRightClickGenerator(new GenerateTMASegmentFromInfillSegment());
-    RightClickSupport.addRightClickGenerator(new GenerateTUASolution());
-    RightClickSupport.addRightClickGenerator(new GenerateTrackFromActiveCuts());
-    RightClickSupport.addRightClickGenerator(new GenerateSensorRangePlot());
-    RightClickSupport.addRightClickGenerator(new GenerateNewSensor());
-    RightClickSupport.addRightClickGenerator(new GenerateNewSensorContact());
-    RightClickSupport.addRightClickGenerator(new GenerateNewNarrativeEntry());
-    RightClickSupport.addRightClickGenerator(new ImportAsTrack());
-    RightClickSupport.addRightClickGenerator(new TrimTrack());
-    RightClickSupport.addRightClickGenerator(new RainbowShadeSonarCuts());
-    RightClickSupport.addRightClickGenerator(new InterpolateTrack());
+		    // and the Replay importer/exporter (used to export items from the
+		    // layer-manager)
+		    ImportManager.addImporter(new Debrief.ReaderWriter.Replay.ImportReplay());
 
-    // and the Replay importer/exporter (used to export items from the
-    // layer-manager)
-    ImportManager.addImporter(new Debrief.ReaderWriter.Replay.ImportReplay());
+		    // tell ImportReplay that we can provide more importers
+		    List<ExtensibleLineImporter> importers = getRepImporterExtensions();
+		    ImportReplay.addExtraImporters(importers);
 
-    // tell ImportReplay that we can provide more importers
-    List<ExtensibleLineImporter> importers = getRepImporterExtensions();
-    ImportReplay.addExtraImporters(importers);
+		    // make Debrief the default editor for XML files
+		    final IEditorRegistry editorRegistry =
+		        PlatformUI.getWorkbench().getEditorRegistry();
+		    editorRegistry.setDefaultEditor("*.xml", "org.mwc.debrief.PlotEditor");
 
-    // make Debrief the default editor for XML files
-    final IEditorRegistry editorRegistry =
-        PlatformUI.getWorkbench().getEditorRegistry();
-    editorRegistry.setDefaultEditor("*.xml", "org.mwc.debrief.PlotEditor");
+		    // tell the message provider where it can fire messages to
+		    MessageProvider.Base.setProvider(DebriefPlugin.this);
 
-    // tell the message provider where it can fire messages to
-    MessageProvider.Base.setProvider(this);
+		    // give the LayerManager our image creator.
+		    _myImageHelper = new DebriefImageHelper();
+		    CoreViewLabelProvider.addImageHelper(_myImageHelper);
 
-    // give the LayerManager our image creator.
-    _myImageHelper = new DebriefImageHelper();
-    CoreViewLabelProvider.addImageHelper(_myImageHelper);
+		    // see if there are any extensions to handle images
+		    loadContentProviderExtensions();
 
-    // see if there are any extensions to handle images
-    loadContentProviderExtensions();
+		    // provide helper for triggering 'new-leg' operation
+		    final GiveMeALeg triggerNewLeg = new GiveMeALeg()
+		    {
 
-    // provide helper for triggering 'new-leg' operation
-    final GiveMeALeg triggerNewLeg = new GiveMeALeg()
-    {
+		      @Override
+		      public void createLegFor(final Layer parent)
+		      {
+		        final InsertTrackSegment ts = new InsertTrackSegment(parent);
+		        ts.run(null);
+		      }
+		    };
 
-      @Override
-      public void createLegFor(final Layer parent)
-      {
-        final InsertTrackSegment ts = new InsertTrackSegment(parent);
-        ts.run(null);
-      }
-    };
+		    CompositeTrackWrapper.setNewLegHelper(triggerNewLeg);
+		    CompositeTrackWrapper.initialise(CorePlugin.getToolParent());
+		    AISDecoder.initialise(CorePlugin.getToolParent());
 
-    CompositeTrackWrapper.setNewLegHelper(triggerNewLeg);
-    CompositeTrackWrapper.initialise(CorePlugin.getToolParent());
-    AISDecoder.initialise(CorePlugin.getToolParent());
+		    ImportNarrativeDocument.setQuestionHelper(new SWTEclipseHelper());
 
-    ImportNarrativeDocument.setQuestionHelper(new SWTEclipseHelper());
+		    // tell the additional data that we can help
+		    AdditionalDataHandler.setExportHelper(new ExportProvider()
+		    {
+		      @Override
+		      public List<IDOMExporter> getExporters()
+		      {
+		        initImportExportHelpers();
+		        return _exportHelpers;
+		      }
 
-    // tell the additional data that we can help
-    AdditionalDataHandler.setExportHelper(new ExportProvider()
-    {
-      @Override
-      public List<IDOMExporter> getExporters()
-      {
-        initImportExportHelpers();
-        return _exportHelpers;
-      }
+		      @Override
+		      public List<ISAXImporter> getImporters()
+		      {
+		        initImportExportHelpers();
+		        return _importHelpers;
+		      }
+		    });
+			return org.eclipse.core.runtime.Status.OK_STATUS;
+		}
+	};
+	load.schedule();
 
-      @Override
-      public List<ISAXImporter> getImporters()
-      {
-        initImportExportHelpers();
-        return _importHelpers;
-      }
-    });
+    
 
   }
 

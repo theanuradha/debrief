@@ -532,6 +532,7 @@ public class PlotEditor extends org.mwc.cmap.plotViewer.editors.CorePlotEditor
   {
     setSite(site);
     setInputWithNotify(input);
+    
 
     // ok - declare and load the supplemental plugins which can load
     // datafiles
