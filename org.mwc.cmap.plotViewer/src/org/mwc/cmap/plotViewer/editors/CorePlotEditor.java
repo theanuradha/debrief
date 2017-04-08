@@ -317,6 +317,11 @@ public abstract class CorePlotEditor extends EditorPart implements
   {
     super();
 
+    
+  }
+
+  protected void initLayers()
+  {
     // create the projection, we're going to need it to load the data, before we
     // have the chart created
     _myGeoHandler = new GtProjection();
@@ -682,6 +687,8 @@ public abstract class CorePlotEditor extends EditorPart implements
 
   public void createPartControl(final Composite parent)
   {
+    initLayers();
+    loadInput(getEditorInput());
     // hey, create the chart
     _myChart = createTheChart(parent);
 
@@ -822,6 +829,9 @@ public abstract class CorePlotEditor extends EditorPart implements
         IResourceChangeEvent.PRE_CLOSE | IResourceChangeEvent.PRE_DELETE
             | IResourceChangeEvent.POST_CHANGE);
   }
+
+  protected  abstract void loadInput(IEditorInput editorInput);
+  
 
   private IContextService getContextService()
   {
@@ -973,6 +983,7 @@ public abstract class CorePlotEditor extends EditorPart implements
    */
   protected SWTChart createTheChart(final Composite parent)
   {
+    initLayers();
     final SWTChart res = new SWTChart(_myLayers, parent, _myGeoHandler)
     {
 

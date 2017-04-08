@@ -75,7 +75,7 @@ public class ASSETPlotEditor extends CorePlotEditor
 
 	protected ISelectionChangedListener _selectionChangeListener;
 
-	private final GtProjection _myProjection;
+	private  GtProjection _myProjection;
 
 	// //////////////////////////////
 	// constructor
@@ -85,44 +85,51 @@ public class ASSETPlotEditor extends CorePlotEditor
 	{
 		super();
 
-		_myProjection = new GtProjection();
+	
 
-		_selectionChangeListener = new ISelectionChangedListener()
-		{
-			public void selectionChanged(final SelectionChangedEvent event)
-			{
-				// right, see what it is
-				final ISelection sel = event.getSelection();
-				newSelection(sel);
+	}
+	
+	@Override
+	protected void initLayers()
+	{
+	  super.initLayers();
+	  _myProjection = new GtProjection();
 
-			}
+    _selectionChangeListener = new ISelectionChangedListener()
+    {
+      public void selectionChanged(final SelectionChangedEvent event)
+      {
+        // right, see what it is
+        final ISelection sel = event.getSelection();
+        newSelection(sel);
 
-		};
+      }
 
-		_listenForMods = new DataListener2()
-		{
-			public void dataModified(final Layers theData, final Layer changedLayer)
-			{
-				fireDirty();
-			}
+    };
 
-			public void dataExtended(final Layers theData)
-			{
-				fireDirty();
-			}
+    _listenForMods = new DataListener2()
+    {
+      public void dataModified(final Layers theData, final Layer changedLayer)
+      {
+        fireDirty();
+      }
 
-			public void dataReformatted(final Layers theData, final Layer changedLayer)
-			{
-				fireDirty();
-			}
+      public void dataExtended(final Layers theData)
+      {
+        fireDirty();
+      }
 
-			@Override
-			public void dataExtended(final Layers theData, final Plottable newItem, final HasEditables parent)
-			{
-				fireDirty();
-			}
-		};
+      public void dataReformatted(final Layers theData, final Layer changedLayer)
+      {
+        fireDirty();
+      }
 
+      @Override
+      public void dataExtended(final Layers theData, final Plottable newItem, final HasEditables parent)
+      {
+        fireDirty();
+      }
+    };
 	}
 
 	private void newSelection(final ISelection sel)
@@ -446,6 +453,13 @@ public class ASSETPlotEditor extends CorePlotEditor
 		// initialise importand stuff
 		setSite(site);
 		setInputWithNotify(input);
+	}
+	
+	@Override
+	protected void loadInput(IEditorInput editorInput)
+	{
+	  
+	  
 	}
 
 	public boolean isSaveAsAllowed()

@@ -337,6 +337,13 @@ public class PlotEditor extends org.mwc.cmap.plotViewer.editors.CorePlotEditor
   {
     super();
 
+   
+  }
+  
+  @Override
+  protected void initLayers()
+  {
+    super.initLayers();
     // create the track manager to manage the primary & secondary tracks
     _trackDataProvider = new TrackManager(_myLayers);
 
@@ -534,6 +541,11 @@ public class PlotEditor extends org.mwc.cmap.plotViewer.editors.CorePlotEditor
     setInputWithNotify(input);
     
 
+   
+  }
+
+  protected void loadInput(final IEditorInput input)
+  {
     // ok - declare and load the supplemental plugins which can load
     // datafiles
     initialiseFileLoaders();
